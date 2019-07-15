@@ -203,7 +203,7 @@ namespace basist
 	{ \
 		{ N * -8,  N * -2,   N * 2,   N * 8 },{ N * -17,  N * -5,  N * 5,  N * 17 },{ N * -29,  N * -9,   N * 9,  N * 29 },{ N * -42, N * -13, N * 13,  N * 42 }, \
 		{ N * -60, N * -18, N * 18,  N * 60 },{ N * -80, N * -24, N * 24,  N * 80 },{ N * -106, N * -33, N * 33, N * 106 },{ N * -183, N * -47, N * 47, N * 183 } \
-	};
+	}
 
 	DECLARE_ETC1_INTEN_TABLE(g_etc1_inten_tables, 1);
 	DECLARE_ETC1_INTEN_TABLE(g_etc1_inten_tables48, 3 * 16);
@@ -798,7 +798,7 @@ namespace basist
 	// encoding from LSB to MSB: low8, high8, error16, size is [32*8][NUM_ETC1_TO_BC7_M6_SELECTOR_RANGES][NUM_ETC1_TO_BC7_M6_SELECTOR_MAPPINGS]
 	extern const uint32_t* g_etc1_to_bc7_m6_table[];
 
-	const uint16_t s_bptc_table_aWeight4[16] = { 0, 4, 9, 13, 17, 21, 26, 30, 34, 38, 43, 47, 51, 55, 60, 64 };
+	//const uint16_t s_bptc_table_aWeight4[16] = { 0, 4, 9, 13, 17, 21, 26, 30, 34, 38, 43, 47, 51, 55, 60, 64 };
 
 #if BASISD_WRITE_NEW_BC7_TABLES
 	static void create_etc1_to_bc7_m6_conversion_table()
@@ -1164,6 +1164,7 @@ namespace basist
 		cEAC_A8_MAX_VALUE_SELECTOR = 7
 	};
 
+#if 0
 	static const int8_t g_eac_a8_modifier_table[16][8] =
 	{
 		{ -3, -6, -9, -15, 2, 5, 8, 14 },
@@ -1184,6 +1185,7 @@ namespace basist
 		{ -4, -6, -8, -9, 3, 5, 7, 8 },
 		{ -3, -5, -7, -9, 2, 4, 6, 8 }
 	};
+#endif
 
 	struct eac_a8_block
 	{
@@ -1938,11 +1940,6 @@ namespace basist
 
 			return;
 		}
-
-		const uint32_t sel_bits0 = pSrc_block->m_bytes[7];
-		const uint32_t sel_bits1 = pSrc_block->m_bytes[6];
-		const uint32_t sel_bits2 = pSrc_block->m_bytes[5];
-		const uint32_t sel_bits3 = pSrc_block->m_bytes[4];
 
 		// y coords
 		// 4 3210 3210 MSB
@@ -2814,6 +2811,7 @@ namespace basist
 		}
 	};
 
+#if 0
 	static const uint8_t g_pvrtc_bilinear_weights[16][4] =
 	{
 		{ 4, 4, 4, 4 }, { 2, 6, 2, 6 }, { 8, 0, 8, 0 }, { 6, 2, 6, 2 },
@@ -2821,6 +2819,7 @@ namespace basist
 		{ 8, 8, 0, 0 }, { 4, 12, 0, 0 }, { 16, 0, 0, 0 }, { 12, 4, 0, 0 },
 		{ 6, 6, 2, 2 }, { 3, 9, 1, 3 }, { 12, 0, 4, 0 }, { 9, 3, 3, 1 },
 	};
+#endif
 
 	struct pvrtc1_temp_block
 	{
@@ -2867,7 +2866,7 @@ namespace basist
 		const uint32_t x_bits = basisu::total_bits(x_mask);
 		const uint32_t y_bits = basisu::total_bits(y_mask);
 		const uint32_t min_bits = basisu::minimum(x_bits, y_bits);
-		const uint32_t max_bits = basisu::maximum(x_bits, y_bits);
+		//const uint32_t max_bits = basisu::maximum(x_bits, y_bits);
 		const uint32_t swizzle_mask = (1 << (min_bits * 2)) - 1;
 
 		uint32_t block_index = 0;
@@ -3725,12 +3724,11 @@ namespace basist
 	}
 
 	bool basisu_lowlevel_transcoder::transcode_slice(void* pDst_blocks, uint32_t num_blocks_x, uint32_t num_blocks_y, const uint8_t* pImage_data, uint32_t image_data_size, block_format fmt,
-		uint32_t output_block_stride_in_bytes, bool pvrtc_wrap_addressing, bool bc1_allow_threecolor_blocks, const basis_file_header& header, const basis_slice_desc& slice_desc, uint32_t output_row_pitch_in_blocks, basisu_transcoder_state* pState)
+		uint32_t output_block_stride_in_bytes, bool pvrtc_wrap_addressing, bool bc1_allow_threecolor_blocks, const bool is_video, const bool alpha_flag, const uint32_t level_index, uint32_t output_row_pitch_in_blocks, basisu_transcoder_state* pState)
 	{
 		if (!pState)
 			pState = &m_def_state;
 
-		const bool is_video = (header.m_tex_type == cBASISTexTypeVideoFrames);
 		const uint32_t total_blocks = num_blocks_x * num_blocks_y;
 
 		if (!output_row_pitch_in_blocks)
@@ -3740,9 +3738,6 @@ namespace basist
 		if (is_video)
 		{
 			// TODO: Add check to make sure the caller hasn't tried skipping past p-frames
-			const bool alpha_flag = (slice_desc.m_flags & cSliceDescFlagsIsAlphaData) != 0;
-			const uint32_t level_index = slice_desc.m_level_index;
-
 			if (level_index >= basisu_transcoder_state::cMaxPrevFrameLevels)
 			{
 				BASISU_DEVEL_ERROR("basisu_lowlevel_transcoder::transcode_slice: unsupported level_index\n");
@@ -4766,7 +4761,7 @@ namespace basist
 		return -1;
 	}
 
-	static void write_opaque_alpha_blocks(
+	void basisu_transcoder::write_opaque_alpha_blocks(
 		uint32_t num_blocks_x, uint32_t num_blocks_y,
 		void* pOutput_blocks, uint32_t output_blocks_buf_size_in_blocks, block_format fmt,
 		uint32_t block_stride_in_bytes, uint32_t output_row_pitch_in_blocks)

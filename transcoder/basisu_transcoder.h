@@ -139,14 +139,14 @@ namespace basist
 		bool decode_tables(const uint8_t *pTable_data, uint32_t table_data_size);
 
 		bool transcode_slice(void *pDst_blocks, uint32_t num_blocks_x, uint32_t num_blocks_y, const uint8_t *pImage_data, uint32_t image_data_size, block_format fmt, 
-			uint32_t output_block_or_pixel_stride_in_bytes, bool wrap_addressing, bool bc1_allow_threecolor_blocks, const bool video_flag, const bool alpha_flag, const uint32_t level_index, const uint32_t orig_width, const uint32_t orig_height, uint32_t output_row_pitch_in_blocks_or_pixels = 0,
+			uint32_t output_block_or_pixel_stride_in_bytes, bool bc1_allow_threecolor_blocks, const bool video_flag, const bool alpha_flag, const uint32_t level_index, const uint32_t orig_width, const uint32_t orig_height, uint32_t output_row_pitch_in_blocks_or_pixels = 0,
 			basisu_transcoder_state *pState = nullptr, bool astc_transcode_alpha = false, void* pAlpha_blocks = nullptr, uint32_t output_rows_in_pixels = 0);
 
 		bool transcode_slice(void *pDst_blocks, uint32_t num_blocks_x, uint32_t num_blocks_y, const uint8_t *pImage_data, uint32_t image_data_size, block_format fmt, 
-			uint32_t output_block_or_pixel_stride_in_bytes, bool wrap_addressing, bool bc1_allow_threecolor_blocks, const basis_file_header &header, const basis_slice_desc& slice_desc, uint32_t output_row_pitch_in_blocks_or_pixels = 0,
+			uint32_t output_block_or_pixel_stride_in_bytes, bool bc1_allow_threecolor_blocks, const basis_file_header &header, const basis_slice_desc& slice_desc, uint32_t output_row_pitch_in_blocks_or_pixels = 0,
 			basisu_transcoder_state *pState = nullptr, bool astc_transcode_alpha = false, void* pAlpha_blocks = nullptr, uint32_t output_rows_in_pixels = 0)
 		{
-			return transcode_slice(pDst_blocks, num_blocks_x, num_blocks_y, pImage_data, image_data_size, fmt, output_block_or_pixel_stride_in_bytes, wrap_addressing, bc1_allow_threecolor_blocks,
+			return transcode_slice(pDst_blocks, num_blocks_x, num_blocks_y, pImage_data, image_data_size, fmt, output_block_or_pixel_stride_in_bytes, bc1_allow_threecolor_blocks,
 								   header.m_tex_type == cBASISTexTypeVideoFrames, (slice_desc.m_flags & cSliceDescFlagsIsAlphaData) != 0, slice_desc.m_level_index, slice_desc.m_orig_width, slice_desc.m_orig_height, output_row_pitch_in_blocks_or_pixels, pState);
 		}
 
@@ -312,9 +312,6 @@ namespace basist
 
 		enum 
 		{
-			// PVRTC1: texture will use wrap addressing vs. clamp (most PVRTC viewer tools assume wrap addressing, so we default to wrap although that can cause edge artifacts)
-			cDecodeFlagsPVRTCWrapAddressing = 1,	
-						
 			// PVRTC1: decode non-pow2 ETC1S texture level to the next larger power of 2 (not implemented yet, but we're going to support it). Ignored if the slice's dimensions are already a power of 2.
 			cDecodeFlagsPVRTCDecodeToNextPow2 = 2,	
 			
@@ -347,7 +344,7 @@ namespace basist
 			uint32_t image_index, uint32_t level_index, 
 			void *pOutput_blocks, uint32_t output_blocks_buf_size_in_blocks_or_pixels,
 			transcoder_texture_format fmt,
-			uint32_t decode_flags = cDecodeFlagsPVRTCWrapAddressing, uint32_t output_row_pitch_in_blocks_or_pixels = 0, basisu_transcoder_state *pState = nullptr, uint32_t output_rows_in_pixels = 0) const;
+			uint32_t decode_flags = 0, uint32_t output_row_pitch_in_blocks_or_pixels = 0, basisu_transcoder_state *pState = nullptr, uint32_t output_rows_in_pixels = 0) const;
 
 		// Finds the basis slice corresponding to the specified image/level/alpha params, or -1 if the slice can't be found.
 		int find_slice(const void *pData, uint32_t data_size, uint32_t image_index, uint32_t level_index, bool alpha_data) const;
@@ -363,7 +360,7 @@ namespace basist
 		// - basisu_transcoder_init() must have been called first to initialize the transcoder lookup tables before calling this function.
 		bool transcode_slice(const void *pData, uint32_t data_size, uint32_t slice_index, 
 			void *pOutput_blocks, uint32_t output_blocks_buf_size_in_blocks_or_pixels,
-			block_format fmt, uint32_t output_block_stride_in_bytes, uint32_t decode_flags = cDecodeFlagsPVRTCWrapAddressing, uint32_t output_row_pitch_in_blocks_or_pixels = 0, basisu_transcoder_state * pState = nullptr, void* pAlpha_blocks = nullptr, uint32_t output_rows_in_pixels = 0) const;
+			block_format fmt, uint32_t output_block_stride_in_bytes, uint32_t decode_flags = 0, uint32_t output_row_pitch_in_blocks_or_pixels = 0, basisu_transcoder_state * pState = nullptr, void* pAlpha_blocks = nullptr, uint32_t output_rows_in_pixels = 0) const;
 
 	   static void write_opaque_alpha_blocks(uint32_t num_blocks_x, uint32_t num_blocks_y,
 			void* pOutput_blocks, uint32_t output_blocks_buf_size_in_blocks, block_format fmt,
